@@ -30,7 +30,7 @@ test("assembles SSE events split across network chunks", async () => {
 test("reports a streamed rate limit and a broken connection", async () => {
   await assert.rejects(
     readStream(responseFromChunks(['data: {"error":{"code":429}}\n\n']), () => {}, () => {}),
-    /Лимит бесплатной модели/,
+    /ограничивает запросы/,
   );
   await assert.rejects(
     readStream(responseFromChunks(['data: {"choices":[{"delta":{"content":"часть"}}]}\n\n']), () => {}, () => {}),
