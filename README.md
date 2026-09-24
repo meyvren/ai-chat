@@ -1,36 +1,53 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Chat
 
-## Getting Started
+Одностраничный чат с бесплатной моделью OpenRouter. React и Next.js используются для интерфейса и небольшого серверного маршрута.
 
-First, run the development server:
+## Запуск за пять минут
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Нужны Node.js 20+ и ключ [OpenRouter](https://openrouter.ai/settings/keys).
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. Установите зависимости: `npm install`.
+2. Скопируйте `.env.example` в `.env.local` и укажите `OPENROUTER_API_KEY`.
+3. Запустите `npm run dev` и откройте <http://localhost:3000>.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+По умолчанию используется `google/gemma-4-31b-it:free`. Модель можно заменить через `OPENROUTER_MODEL` на другую доступную модель с суффиксом `:free`. Бесплатные модели могут ограничивать число запросов и менять доступность.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Проверки: `npm test`, `npm run lint`, `npx tsc --noEmit`, `npm run build`.
 
-## Learn More
+## Как устроено
 
-To learn more about Next.js, take a look at the following resources:
+- `src/app/components/Chat.tsx` хранит историю текущей страницы, управляет вводом, потоковым выводом, остановкой и ошибками.
+- `src/app/api/chat/route.ts` проверяет входные сообщения и обращается к OpenRouter. Ключ читается только на сервере из `OPENROUTER_API_KEY`; в браузерный код и запросы со страницы он не попадает.
+- API возвращает поток SSE. Клиент собирает события из произвольных сетевых фрагментов и добавляет полученный текст в последнее сообщение модели.
+- Кнопка «Стоп» и Esc отменяют запрос через `AbortController`. Уже полученный текст остаётся в истории с пометкой «Ответ остановлен».
+- Есть отдельные состояния для лимита 429, ошибки настройки ключа, таймаута, обрыва потока и других сбоев. После ошибки можно отправить новое сообщение.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+История живёт в состоянии React до перезагрузки страницы. Это осознанный выбор для короткого тестового задания: не требуется хранить чужой диалог в браузере и синхронизировать постоянное хранилище. При каждом новом запросе модели передаются последние 30 сообщений, чтобы не раздувать запрос бесконечно; в интерфейсе история текущей страницы остаётся полной. Кнопка «Новый чат» очищает её по запросу пользователя.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Доступность и решения по ТЗ
 
-## Deploy on Vercel
+Поле имеет текстовую метку; кнопки с иконками имеют названия для экранного диктора. Tab переводит фокус между элементами, Enter отправляет, Shift+Enter добавляет строку, Esc останавливает ответ. Фокус заметен на форме и кнопках.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+В пожеланиях предложено убрать стандартный `outline`. Я убрал его у поля ввода, но заменил заметной рамкой всей формы через `focus-within`; у кнопок оставил собственную обводку при клавиатурном фокусе. Полное удаление индикации фокуса противоречило бы требованию пользоваться чатом с клавиатуры.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Кнопку `+` из раннего макета убрал: загрузка изображений и голос не входят в обязательные требования, а кнопка без действия вводила бы в заблуждение. Приоритет отдан стримингу, отмене и ошибкам. Markdown в ответах пока не рендерится: это бонус, который не влияет на работоспособность основного сценария. Текст модели выводится как обычный текст без выполнения HTML.
+
+## Если бы был ещё день
+
+- Добавить браузерные проверки отмены генерации и сбоев API с подставным сервером.
+- Добавить Markdown с безопасной обработкой ссылок и кода.
+- Дать пользователю выбрать бесплатную модель и явно показать её ограничения.
+- Добавить сохранение истории по желанию пользователя и ограничение частоты запросов для публичного развёртывания.
+- Проверить интерфейс со скринридерами и на нескольких реальных мобильных устройствах.
+
+## ИИ-лог
+
+Работал с Codex как с наставником и затем как с помощником по реализации. Сначала сам собрал каркас `Chat.tsx`, тип сообщения и форму. Codex помог разобраться с обработчиками событий React: моя первая версия вызывала `preventDefault()` во время рендера и не принимала событие в `onChange`; ошибки заметили через TypeScript.
+
+Codex ошибся и в процессе обучения: сначала дал слишком мелкое упражнение с заголовком, затем сразу слишком большой блок задач. Я указал на это, после чего мы разбирали конкретный код и маленькие причины ошибок. При реализации Codex предложил структуру API, потоковый парсер и состояния ошибок; проверял их тестами, TypeScript, ESLint и сборкой. Первую сборку сломала загрузка Google Fonts из стартового шаблона при ограниченном доступе к сети. Зависимость убрали и перешли на системный шрифт.
+
+Решение не делать загрузку файлов и голосовой ввод принято после сверки с требованиями и оценкой времени. Проверку с настоящим OpenRouter-ключом нужно выполнить локально: ключ намеренно не хранится в репозитории.
+
+## Лицензия
+
+MIT, см. `LICENSE`.
