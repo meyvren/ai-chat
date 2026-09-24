@@ -59,7 +59,13 @@ export async function POST(request: Request) {
       cache: "no-store",
       signal: request.signal,
     });
-  } catch {
+  } catch (caught) {
+    const cause = caught instanceof Error ? caught.cause : undefined;
+    const code = cause && typeof cause === "object" && "code" in cause ? cause.code : undefined;
+    console.error("OpenRouter connection failed", { code, name: caught instanceof Error ? caught.name : "unknown" });
+    if (code === "EACCES" || code === "EPERM") {
+      return errorResponse("Серверу закрыт доступ к OpenRouter. Проверьте сетевые ограничения среды запуска.", 502);
+    }
     return errorResponse("Нет связи с OpenRouter. Проверьте сеть и повторите попытку.", 502);
   }
 
