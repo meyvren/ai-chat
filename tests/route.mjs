@@ -50,3 +50,25 @@ test("forwards a stream and maps upstream rate limiting", async () => {
     else process.env.OPENROUTER_API_KEY = originalKey;
   }
 });
+
+test("explains when the server environment blocks outgoing requests", async () => {
+  const originalFetch = globalThis.fetch;
+  const originalKey = process.env.OPENROUTER_API_KEY;
+  const originalError = console.error;
+  process.env.OPENROUTER_API_KEY = "test-secret";
+  console.error = () => {};
+  try {
+    globalThis.fetch = async () => {
+      const cause = Object.assign(new Error("blocked"), { code: "EACCES" });
+      throw new Error("fetch failed", { cause });
+    };
+    const response = await POST(chatRequest());
+    assert.equal(response.status, 502);
+    assert.match((await response.json()).error, /закрыт доступ/);
+  } finally {
+    globalThis.fetch = originalFetch;
+    console.error = originalError;
+    if (originalKey === undefined) delete process.env.OPENROUTER_API_KEY;
+    else process.env.OPENROUTER_API_KEY = originalKey;
+  }
+});
