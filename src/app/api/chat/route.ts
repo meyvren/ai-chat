@@ -52,7 +52,7 @@ export async function POST(request: Request) {
         "X-Title": "AI Chat Test Assignment",
       },
       body: JSON.stringify({
-        model: process.env.OPENROUTER_MODEL || "google/gemma-4-31b-it:free",
+        model: process.env.OPENROUTER_MODEL || "nvidia/nemotron-3-ultra-550b-a55b-20260604:free",
         messages,
         stream: true,
       }),
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
 
   if (!upstream.ok) {
     if (upstream.status === 429) {
-      return errorResponse("Лимит бесплатной модели исчерпан. Подождите и попробуйте снова.", 429);
+      return errorResponse("Бесплатная модель сейчас ограничивает запросы. Попробуйте позже или выберите другую модель.", 429);
     }
     if (upstream.status === 401 || upstream.status === 403) {
       return errorResponse("OpenRouter отклонил ключ API. Проверьте настройку сервера.", 502);

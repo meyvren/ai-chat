@@ -149,7 +149,7 @@ export default function Chat() {
         </div>
         <button
           type="button"
-          disabled={isStreaming || messages.length === 0}
+          disabled={isStreaming}
           onClick={() => { setMessages([]); setError(null); }}
           className="shrink-0 rounded-lg border border-white/15 px-3 py-2 text-xs text-slate-300 transition-colors hover:border-cyan-300/50 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300 disabled:cursor-not-allowed disabled:opacity-40"
         >

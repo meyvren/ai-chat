@@ -43,7 +43,7 @@ test("forwards a stream and maps upstream rate limiting", async () => {
     globalThis.fetch = async () => new Response("limit", { status: 429 });
     const limited = await POST(chatRequest());
     assert.equal(limited.status, 429);
-    assert.match((await limited.json()).error, /Лимит бесплатной модели/);
+    assert.match((await limited.json()).error, /ограничивает запросы/);
   } finally {
     globalThis.fetch = originalFetch;
     if (originalKey === undefined) delete process.env.OPENROUTER_API_KEY;
