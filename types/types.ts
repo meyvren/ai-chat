@@ -1,7 +1,6 @@
-
-export type Message = { 
-    id: number,
-    role: 'user' | 'assistant',
-    content: string
-}
-
+export type Message = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  stopped?: boolean;
+};
